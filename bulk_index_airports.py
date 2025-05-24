@@ -13,16 +13,23 @@ es = Elasticsearch(
              "Content-Type": "application/vnd.elasticsearch+json; compatible-with=8"}
 )
 
+def generate_ngrams(text, n=3):
+    """Generate n-grams from a given text."""
+    text = text.lower()
+    return [text[i:i + n] for i in range(len(text) - n + 1)]
+
 def generate_docs():
     csv_path = os.path.join(os.path.dirname(__file__), ".", "airports.csv")
     with open(csv_path, newline='', encoding='utf-8') as csvfile:
         reader = csv.DictReader(csvfile)
         for i, row in tqdm(enumerate(reader), desc="Indexing airports", unit="rows", total=76365):
+            name = row.get("name", "")
             yield {
                 "_index": "airports",
                 "_id": i,
                 "_source": {
-                    "name": row.get("name"),
+                    "name": name,
+                    "name_ngrams": generate_ngrams(name),
                     "icao_code": row.get("ident"),
                     "iata_code": row.get("iata_code"),
                     "gps_code": row.get("gps_code"),
